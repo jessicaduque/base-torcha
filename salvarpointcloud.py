@@ -11,8 +11,8 @@ def main():
     config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
     config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
 
-    colorizer.set_option(rs.option.min_distance, 0.4)
-    colorizer.set_option(rs.option.max_distance, 0.6)
+    colorizer.set_option(rs.option.min_distance, 0.5)
+    colorizer.set_option(rs.option.max_distance, 1)
 
     pc = rs.pointcloud()
     points = rs.points()

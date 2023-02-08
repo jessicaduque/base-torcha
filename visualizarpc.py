@@ -6,7 +6,7 @@ import itertools
 
 def retirarChao(cloud):
     pontos = np.asarray(cloud.points)  
-    cloud = cloud.select_by_index(np.where(pontos[:, 2] > -0.52)[0])
+    cloud = cloud.select_by_index(np.where(pontos[:, 2] > -0.67)[0])
     return cloud
 
 def retirarPontosAleatorios(cloud):
@@ -15,7 +15,7 @@ def retirarPontosAleatorios(cloud):
     return inlier_cloud
 
 def salvarProcessado(cloud, n):
-    o3d.io.write_point_cloud("pointclouds/processados/pointcloud33_2.ply".format(n), cloud)
+    o3d.io.write_point_cloud("pointclouds/processados/pointcloud{}.ply".format(n), cloud)
 
 def rotacionarPC(cloud):
     o3d.visualization.draw_geometries_with_editing([cloud]) # Visualize the point cloud
@@ -27,16 +27,16 @@ def main():
     while True:
         # Pegar informação do point cloud a ser manipulado
         numPC = int(input("Qual o número do point cloud a ser manipulado?\n"))
-        cloud = o3d.io.read_point_cloud("pointclouds/pointcloud{}.ply".format(numPC)) # Read the point cloud    
+        cloud = o3d.io.read_point_cloud("pointclouds/processados/pointcloud{}.ply".format(numPC)) # Read the point cloud    
         
         # Retirar o chão do point cloud
         #cloud = retirarChao(cloud)
 
         # Retirar pontos muito isolados do point cloud
-        cloud = retirarPontosAleatorios(cloud)
+        #cloud = retirarPontosAleatorios(cloud)
         
         # Rotacionar point cloud
-        cloud = rotacionarPC(cloud)
+        #cloud = rotacionarPC(cloud)
 
         o3d.visualization.draw_geometries_with_editing([cloud]) # Visualize the point cloud 
         salvar = input("Você gostaria de salvar o point cloud processado? (s / n)\n")

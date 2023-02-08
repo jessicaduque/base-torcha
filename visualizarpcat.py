@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 from IPython.display import HTML
 
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+
 ### Função para reduzir a quantidade dos pontos do point cloud
 def filtrarPC(A, B):
     r = 0.004
@@ -56,6 +59,20 @@ def plotarGraf3d(coords_dict, coordsMin, coordsMax):
     ax.scatter(*coords_dict['B'].T, color=colors['B'])
     plt.show()
 
+# Função para organizar por coordenada x as coordenadas dadas, e a partir disso formar um gráfico com o ponto z
+def grafZemX(coords):
+    coords = coords[coords[:, 0].argsort()]
+    x = []
+    z = []
+    for i in coords:
+        x.append(i[0])
+        z.append(i[2])
+    plt.plot(x,z)
+    plt.xlabel('X-axis')
+    plt.ylabel('Z-axis')
+    plt.title("COORDS X E Y")
+    plt.show()
+
 ### Função para comparar dois point clouds
 def compararPC(cloud1, cloud2):
     A = pyt.storage.PlyHandler.loadPly(cloud1)
@@ -69,6 +86,11 @@ def compararPC(cloud1, cloud2):
     'B': B.coords,
     }
 
+    # TESTES
+    y_actual = B.coords
+    grafZemX(A.coords)
+    grafZemX(B.coords)
+
     ### Junto com os prints parecidos mais abaixo no código, comprovam que mesmo depois de algoritmo de ICP a quantidade de pontos de cada point cloud é o mesmo
     #print("A antes: {}".format(coords_dict['A'].shape))
     #print("B antes: {}".format(coords_dict['B'].shape))
@@ -77,7 +99,7 @@ def compararPC(cloud1, cloud2):
     coordsMax, coordsMin = acharLimites(coords_dict)
 
     ### Plotar gráfico 3d dos pontos iniciais de A e B, sem ICP
-    #plotarGraf3d(coords_dict, coordsMin, coordsMax)
+    plotarGraf3d(coords_dict, coordsMin, coordsMax)
 
 
     ### Algoritmo de ICP
@@ -100,6 +122,12 @@ def compararPC(cloud1, cloud2):
     #print("A icp: {}".format(coords_dict['A'].shape))
     #print("B icp: {}".format(coords_dict['B'].shape))
 
+    # TESTES
+    y_predicted = pyt.transformation.transform(coords_dict['B'], T_dict['B'])
+    rms = sqrt(mean_squared_error(y_actual, y_predicted))
+    print(rms)
+    print(T_dict)
+    
 
     ### Plot gráficos 2d dos supostos erros do pairs_dict
     x = []
@@ -122,15 +150,16 @@ def compararPC(cloud1, cloud2):
     plt.title("A: B")
     plt.show()
 
+
     ### Plotar o gráfico 3d depois que o algoritmo de ICP foi rodado
     coords_dict = {
     'A': pyt.transformation.transform(coords_dict['A'], T_dict['A']),
     'B': pyt.transformation.transform(coords_dict['B'], T_dict['B']),
     }
 
-    coords_TESTE = {}
-    coords_TESTE['A'] = pyt.transformation.transform(coords_dict['A'], T_dict['A'])
-    coords_TESTE['B'] = pyt.transformation.transform(coords_dict['B'], T_dict['B'])
+    ### TESTES
+    grafZemX(coords_dict['A'])
+    grafZemX(coords_dict['B'])
 
     coordsMax, coordsMin = acharLimites(coords_dict)
     plotarGraf3d(coords_dict, coordsMin, coordsMax)
@@ -138,44 +167,22 @@ def compararPC(cloud1, cloud2):
     ### Cria o numpy.ndarray do x e y das coordenadas com pointcloud, com o z como o erro de cada ponto
     coords_errosA = np.empty((0,3))
     for coordA in range (coords_dict['A'].shape[0]):
-        coords_errosA = np.append(coords_errosA, np.array([[coords_dict['A'][coordA][0], coords_dict['A'][coordA][1], pairs_dict['B']['A'][1][coordA] - 1]]), axis=0)
+        coords_errosA = np.append(coords_errosA, np.array([[coords_dict['A'][coordA][0], coords_dict['A'][coordA][1], pairs_dict['B']['A'][1][coordA]]]), axis=0)
 
     coords_errosB = np.empty((0,3))
     for coordB in range (coords_dict['B'].shape[0]):
-        coords_errosB = np.append(coords_errosB, np.array([[coords_dict['B'][coordB][0], coords_dict['B'][coordB][1], pairs_dict['A']['B'][1][coordB] - 1]]), axis=0)
+        coords_errosB = np.append(coords_errosB, np.array([[coords_dict['B'][coordB][0], coords_dict['B'][coordB][1], pairs_dict['A']['B'][1][coordB]]]), axis=0)
 
     coords_dict = {
     'A': coords_errosA,
     'B': coords_errosB,
     }
 
-
-    coords_TESTE['AB'] = coords_errosB
-    coords_TESTE['BA'] = coords_errosA
-
     coordsMax, coordsMin = acharLimites(coords_dict)
     plotarGraf3d(coords_dict, coordsMin, coordsMax)
 
 
     ### TESTES
-
-    # Cores e limites de eixos
-    colors = {'A': 'red', 'B': 'blue', 'AB': 'yellow', 'BA': 'black'}
-    fig = plt.figure(figsize=(15, 15))
-    ax = plt.axes(projection='3d')
-    ax.set_xlim(coordsMin[0], coordsMax[0])
-    ax.set_ylim(coordsMin[1], coordsMax[1])
-    ax.set_zlim(-0.755, 0)
-    ax.set_xlabel('X (m)')
-    ax.set_ylabel('Y (m)')
-    ax.set_zlabel('Z (m)')
-
-    ax.scatter(*coords_TESTE['A'].T, color=colors['A'])
-    ax.scatter(*coords_TESTE['B'].T, color=colors['B'])
-    ax.scatter(*coords_TESTE['AB'].T, color=colors['AB'])
-    ax.scatter(*coords_TESTE['BA'].T, color=colors['BA'])
-    plt.show()
-
 
    # errosAB = []
    # for erro in coords_dict['B']:
@@ -185,13 +192,13 @@ def compararPC(cloud1, cloud2):
     #print(errosAB[0])
 
     ### Plotar o gráfico do RMSE existente ao longo das iterações do processo de ICP
-    #fig = plt.figure(figsize=(15, 8))
-    #plt.xlim(0, len(report['RMSE']) + 1)
-    #plt.xlabel('Iteration')
-    #plt.ylabel('RMSE')
+    fig = plt.figure(figsize=(15, 8))
+    plt.xlim(0, len(report['RMSE']) + 1)
+    plt.xlabel('Iteration')
+    plt.ylabel('RMSE')
 
-    #plt.bar(np.arange(len(report['RMSE']))+1, report['RMSE'], color='gray')
-    #plt.show()
+    plt.bar(np.arange(len(report['RMSE']))+1, report['RMSE'], color='gray')
+    plt.show()
     
 
 def main():
